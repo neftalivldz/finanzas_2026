@@ -106,7 +106,7 @@ class StockPriceDownloader:
         """
         try:
             print(f"Downloading {self.ticker} data from {self.start_date} to {self.end_date}...")
-            ld = self.get_session()
+            #ld = self.get_session()
 
             ##self.data = ld.get_history(
             ##    universe=[self.ticker], 
