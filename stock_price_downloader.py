@@ -5,6 +5,7 @@ This module provides a clean, reusable class for downloading and analyzing
 stock price data from Yahoo Finance.
 """
 import lseg.data as ld
+import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -107,19 +108,27 @@ class StockPriceDownloader:
             print(f"Downloading {self.ticker} data from {self.start_date} to {self.end_date}...")
             ld = self.get_session()
 
-            self.data = ld.get_history(
-                universe=[self.ticker], 
-                fields=['TR.PriceClose', 'TR.PriceOpen', 'TR.PriceHigh', 'TR.PriceLow', 'TR.Volume'], 
-                interval=self.interval_period,
-                start = self.start_date, 
-                end = self.end_date) \
-                .rename(columns={
-                    'Price Close': 'Close', 
-                    'Price Open': 'Open', 
-                    'Price High': 'High',
-                    'Price Low': 'Low'
-                })
+            ##self.data = ld.get_history(
+            ##    universe=[self.ticker], 
+            ##    fields=['TR.PriceClose', 'TR.PriceOpen', 'TR.PriceHigh', 'TR.PriceLow', 'TR.Volume'], 
+            ##    interval=self.interval_period,
+            ##    start = self.start_date, 
+            ##    end = self.end_date) \
+            ##    .rename(columns={
+            ##        'Price Close': 'close', 
+            ##        'Price Open': 'open', 
+            ##        'Price High': 'high',
+            ##        'Price Low': 'low'
+            ##    })
 
+            ##
+
+            self.data = yf.download(self.ticker, start=self.start_date, end=self.end_date).rename(columns={
+                    'Close': 'close', 
+                    'Open': 'open', 
+                    'High': 'high',
+                    'Low': 'low'
+                })
             
             if self.data.empty:
                 raise ValueError(
@@ -127,7 +136,7 @@ class StockPriceDownloader:
                     "Please verify the ticker symbol is correct."
                 )
             
-            self.closing_prices = self.data['Close']
+            self.closing_prices = self.data['close']
             print(f"Successfully downloaded {len(self.data)} records")
             return self.data
             
@@ -378,7 +387,7 @@ class StockPriceDownloader:
             self.data.to_csv(filepath)
             print(f"Full data exported to {filepath}")
         else:
-            self.closing_prices.to_csv(filepath, header=['Close'])
+            self.closing_prices.to_csv(filepath, header=['close'])
             print(f"Closing prices exported to {filepath}")
 
 
