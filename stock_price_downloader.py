@@ -123,11 +123,14 @@ class StockPriceDownloader:
 
             ##
 
-            self.data = yf.download(self.ticker, start=self.start_date, end=self.end_date).rename(columns={
-                    'Close': 'close', 
-                    'Open': 'open', 
-                    'High': 'high',
-                    'Low': 'low'
+            self.data = yf.download(self.ticker, start=self.start_date, end=self.end_date)
+            self.data.columns = self.data.columns.map('_'.join)
+            self.data = self.data.rename(columns={
+                    f'Close_{self.ticker}': 'close', 
+                    f'Open_{self.ticker}': 'open', 
+                    f'High_{self.ticker}': 'high',
+                    f'Low_{self.ticker}': 'low',
+                    f'Volume_{self.ticker}': 'volume'
                 })
             
             if self.data.empty:
@@ -142,7 +145,7 @@ class StockPriceDownloader:
             
         except Exception as e:
             raise Exception(f"Failed to download data: {e}")
-    
+
     def get_closing_prices(self) -> pd.Series:
         """
         Get the closing prices series.
@@ -409,3 +412,5 @@ if __name__ == "__main__":
     # Example 3: Export to CSV
     # apple.export_to_csv('apple_closing_prices.csv')
     # apple.export_to_csv('apple_full_data.csv', export_all_columns=True)
+
+    
