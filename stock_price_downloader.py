@@ -106,32 +106,33 @@ class StockPriceDownloader:
         """
         try:
             print(f"Downloading {self.ticker} data from {self.start_date} to {self.end_date}...")
-            #ld = self.get_session()
+            
+            ld = self.get_session()
 
-            ##self.data = ld.get_history(
-            ##    universe=[self.ticker], 
-            ##    fields=['TR.PriceClose', 'TR.PriceOpen', 'TR.PriceHigh', 'TR.PriceLow', 'TR.Volume'], 
-            ##    interval=self.interval_period,
-            ##    start = self.start_date, 
-            ##    end = self.end_date) \
-            ##    .rename(columns={
-            ##        'Price Close': 'close', 
-            ##        'Price Open': 'open', 
-            ##        'Price High': 'high',
-            ##        'Price Low': 'low'
-            ##    })
+            self.data = ld.get_history(
+                universe=[self.ticker], 
+                fields=['TR.PriceClose', 'TR.PriceOpen', 'TR.PriceHigh', 'TR.PriceLow', 'TR.Volume'], 
+                interval=self.interval_period,
+                start = self.start_date, 
+                end = self.end_date) \
+                .rename(columns={
+                    'Price Close': 'close', 
+                    'Price Open': 'open', 
+                    'Price High': 'high',
+                    'Price Low': 'low'
+                })
 
             ##
 
-            self.data = yf.download(self.ticker, start=self.start_date, end=self.end_date)
-            self.data.columns = self.data.columns.map('_'.join)
-            self.data = self.data.rename(columns={
-                    f'Close_{self.ticker}': 'close', 
-                    f'Open_{self.ticker}': 'open', 
-                    f'High_{self.ticker}': 'high',
-                    f'Low_{self.ticker}': 'low',
-                    f'Volume_{self.ticker}': 'volume'
-                })
+            ##self.data = yf.download(self.ticker, start=self.start_date, end=self.end_date)
+            ##self.data.columns = self.data.columns.map('_'.join)
+            ##self.data = self.data.rename(columns={
+            ##        f'Close_{self.ticker}': 'close', 
+            ##        f'Open_{self.ticker}': 'open', 
+            ##        f'High_{self.ticker}': 'high',
+            ##        f'Low_{self.ticker}': 'low',
+            ##        f'Volume_{self.ticker}': 'volume'
+            ##    })
             
             if self.data.empty:
                 raise ValueError(
