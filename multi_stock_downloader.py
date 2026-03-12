@@ -86,6 +86,14 @@ class MultiStockDownloader:
 
         self.closing_prices = pd.concat(series_list, axis=1)
         self.closing_prices.index.name = "Date"
+
+        # Todas las columnas
+        for col in self.closing_prices.columns:
+            self.closing_prices = fill_null_with_previous_price(
+                self.closing_prices,
+                col,
+                limit=1,
+        )
         return self.closing_prices
 
     def get_closing_prices(self) -> pd.DataFrame:
@@ -104,6 +112,58 @@ class MultiStockDownloader:
                 "Data not downloaded yet. Call download() first."
             )
         return self.closing_prices
+
+
+# ---------------------------------------------------------------------------
+# Utility functions
+# ---------------------------------------------------------------------------
+
+def fill_null_with_previous_price(
+    df: pd.DataFrame,
+    column: str,
+    inplace: bool = False,
+    limit: Optional[int] = None,
+) -> pd.DataFrame:
+    """
+    Reemplaza los valores nulos de una columna con el precio del período anterior.
+
+    Utiliza forward fill (ffill): propaga el último valor válido hacia adelante
+    para cubrir los NaN. Útil cuando faltan precios en fechas sin mercado
+    (fines de semana, festivos, datos corruptos, etc.).
+
+    Args:
+        df:      DataFrame con el índice de fechas y la columna de precios.
+        column:  Nombre de la columna a rellenar.
+        inplace: Si True, modifica el DataFrame original; si False, devuelve
+                 una copia. Por defecto False.
+        limit:   Número máximo de períodos consecutivos a rellenar. Si None,
+                 rellena todos los NaN hacia adelante.
+
+    Returns:
+        pd.DataFrame con los nulos de ``column`` reemplazados por el valor anterior.
+
+    Raises:
+        KeyError: Si ``column`` no existe en el DataFrame.
+
+    Example:
+        >>> prices = pd.DataFrame(
+        ...     {"AAPL": [150.0, None, None, 155.0, None]},
+        ...     index=pd.date_range("2024-01-01", periods=5),
+        ... )
+        >>> fill_null_with_previous_price(prices, "AAPL")
+                     AAPL
+        2024-01-01  150.0
+        2024-01-02  150.0
+        2024-01-03  150.0
+        2024-01-04  155.0
+        2024-01-05  155.0
+    """
+    if column not in df.columns:
+        raise KeyError(f"La columna '{column}' no existe en el DataFrame.")
+
+    result = df if inplace else df.copy()
+    result[column] = result[column].ffill(limit=limit)
+    return result
 
 
 # ---------------------------------------------------------------------------
