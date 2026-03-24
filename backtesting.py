@@ -11,8 +11,9 @@ Uso rápido
         portfolio_path="portfolio.json",
         start_date="2023-01-03",
     )
-    pv = bt.run()   # pd.DataFrame con portfolio_value
-    bt.plot()       # gráfico Portfolio vs S&P 500
+    pv = bt.run()          # pd.DataFrame con portfolio_value
+    bt.plot()              # gráfico Portfolio vs S&P 500
+    df = bt.get_full_dataframe()  # DataFrame con precios, portfolio y S&P 500
 """
 
 from __future__ import annotations
@@ -55,6 +56,8 @@ class PortfolioBacktester:
         end_date (Optional[str]): Fecha de fin; None = hoy.
         portfolio_value (Optional[pd.DataFrame]): Resultado de ``run()``.
         comparison (Optional[pd.DataFrame]): DataFrame con Portfolio y SP500.
+        full_df (Optional[pd.DataFrame]): DataFrame completo con precios por
+            acción, valor del portafolio y S&P 500 (disponible tras ``run()``).
     """
 
     def __init__(
@@ -76,6 +79,7 @@ class PortfolioBacktester:
         self.end_date = end_date
         self.portfolio_value: Optional[pd.DataFrame] = None
         self.comparison: Optional[pd.DataFrame] = None
+        self.full_df: Optional[pd.DataFrame] = None
 
         self._tickers: list[str] = []
         self._allocations: dict[str, float] = {}
@@ -99,6 +103,7 @@ class PortfolioBacktester:
         self._compute_portfolio_value()
         self._download_sp500()
         self._build_comparison()
+        self._build_full_dataframe()
         return self.portfolio_value  # type: ignore[return-value]
 
     def plot(self, figsize: tuple[int, int] = (13, 5)) -> None:
@@ -142,6 +147,25 @@ class PortfolioBacktester:
         ax.grid(True, alpha=0.3)
         plt.tight_layout()
         plt.show()
+
+    def get_full_dataframe(self) -> pd.DataFrame:
+        """
+        Devuelve un DataFrame con los precios de cada acción del portafolio,
+        el valor total del portafolio y el índice S&P 500, alineados por fecha.
+
+        Las columnas son:
+        - Una columna por cada ticker (precio de cierre).
+        - ``portfolio_value``: valor total del portafolio en cada fecha.
+        - ``SP500``: precio de cierre del S&P 500.
+
+        Returns:
+            pd.DataFrame indexado por fecha con todas las series anteriores.
+
+        Raises:
+            RuntimeError: Si ``run()`` no ha sido llamado antes.
+        """
+        self._require_run()
+        return self.full_df.copy()  # type: ignore[return-value]
 
     # ------------------------------------------------------------------
     # Pasos internos del pipeline
@@ -215,6 +239,16 @@ class PortfolioBacktester:
         self.comparison = pv_flat.rename(
             columns={"portfolio_value": "Portfolio"}
         ).join(self._sp500[[_SP500_COLUMN]], how="inner")
+
+    def _build_full_dataframe(self) -> None:
+        """
+        Construye ``self.full_df``: precios individuales + portfolio_value + SP500,
+        alineados por fecha desde ``start_date``.
+        """
+        prices = self._prices.loc[self.start_date:, self._tickers].copy()  # type: ignore[index]
+        full = prices.join(self.portfolio_value, how="inner")  # type: ignore[arg-type]
+        full = full.join(self._sp500[[_SP500_COLUMN]], how="inner")
+        self.full_df = full
 
     # ------------------------------------------------------------------
     # Utilidades privadas
